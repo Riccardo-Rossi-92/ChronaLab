@@ -105,7 +105,7 @@ for l = 1 : length(VAE.CodeSizes)
     VAE.MiniBatch = min(VAE.MiniBatch,N);
 
     % Saturation checks
-    Saturation_checks_threshold = 100;
+    Saturation_checks_threshold = 10;
 
     %% training
 
@@ -159,6 +159,7 @@ for l = 1 : length(VAE.CodeSizes)
         drawnow
 
         %% Saturation checks
+        
         Loss = double(extractdata(gather(Loss)));
         if Loss < 0.95*BestLoss
             Results.Network(l).parameters = parameters;
