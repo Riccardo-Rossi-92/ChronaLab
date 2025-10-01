@@ -205,11 +205,6 @@ for epoch = 1 :  3000
 
     end
 
-
-
-
-
-
     %% Saturation checks
     Loss = double(extractdata(gather(Loss)));
     if Loss < 0.95*BestLoss

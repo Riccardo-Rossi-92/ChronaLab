@@ -34,7 +34,7 @@ X = [X Y];
 %% time-series based configuration
 
 embedding.case = 1;
-embedding.variable = [1 4];
+embedding.variable = [4];
 embedding.window = 5;
 
 %% Embedding
@@ -82,7 +82,7 @@ for l = 1 : length(VAE.CodeSizes)
 
     % Network architecture
 
-    VAE.Layer_En = [30 30];
+    VAE.Layer_En = [30 30 30 30];
     VAE.Layer_Dec = flip(VAE.Layer_En);
     VAE.CodeSize = VAE.CodeSizes(l);
 
@@ -156,7 +156,6 @@ for l = 1 : length(VAE.CodeSizes)
         %% Saturation checks
         
         Loss = double(extractdata(gather(Loss)));
-
         if Loss < 0.95*BestLoss
             Results.Network(l).parameters = parameters;
             Saturation_checks = 0;
