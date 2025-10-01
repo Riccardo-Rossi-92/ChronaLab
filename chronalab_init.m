@@ -19,19 +19,19 @@ end
     % Directory for VirtualLab
     path_main = fileparts(mfilename('fullpath'));
 
-    paths_to_add = ["\src\correlation_dimension";
-                    "\src\generate_time_series";
-                    "\src\generate_coupled_systems";
-                    "\src\autoencoder_dimension"
-                    "\examples";
-                    "\analyses";
-                    "\analyses\DimensionCausalityDetection"];
+    paths_to_add = ["/src/correlation_dimension";
+                    "/src/generate_time_series";
+                    "/src/generate_coupled_systems";
+                    "/src/autoencoder_dimension"
+                    "/examples";
+                    "/analyses";
+                    "/analyses/DimensionCausalityDetection"];
 
     for i = 1 : length(paths_to_add)
         path_new = path_main + paths_to_add(i);
         if ~contains(path, path_new)
             addpath(path_new);
-            fprintf('new added path : %s\n', path_new);
+            fprintf('new added path : %s/n', path_new);
         end
     end
 
