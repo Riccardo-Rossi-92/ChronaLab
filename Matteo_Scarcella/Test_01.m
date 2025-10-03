@@ -13,8 +13,8 @@ Xcoupled = [X Y];
 %% time-series based configuration
 
 embedding.case = 1;
-embedding.variable = [1 2 3 4 5 6]; 
-embedding.window = 3; % sceglie la dimensione della finestra di embedding
+embedding.variable = [1]; 
+embedding.window = 5; % sceglie la dimensione della finestra di embedding
 
 %% Embedding
 
