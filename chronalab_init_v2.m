@@ -25,12 +25,9 @@ end
                     "/src/autoencoder_dimension"
                     "/examples";
                     "/analyses";
-<<<<<<< HEAD
                     "/analyses/DimensionCausalityDetection";
+                    "/analyses/Denoising";
                     "/Matteo_Scarcella"];
-=======
-                    "/analyses/DimensionCausalityDetection"];
->>>>>>> a4fa6d7bfd9a0b30521f965fddc72cd4d21b8f0b
 
     for i = 1 : length(paths_to_add)
         path_new = path_main + paths_to_add(i);
