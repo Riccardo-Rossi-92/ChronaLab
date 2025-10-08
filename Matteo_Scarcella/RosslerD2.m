@@ -1,4 +1,5 @@
 function D2 = RosslerD2(noise_level, embedding)
+% Calcola la dimensione D2 per un sistema di Rossler 
 
     % Crea un sistema di Rossler
     [X,~] = CoupledRossler(0);

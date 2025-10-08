@@ -77,5 +77,3 @@ elseif Predict == 1
     X = X.*parameters.scale.Xstd + parameters.scale.Xmean;
 
 end
-
-

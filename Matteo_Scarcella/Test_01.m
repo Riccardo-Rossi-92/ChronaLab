@@ -56,3 +56,6 @@ end
 %% Calcola la dimensionalità intrinseca tramite il metodo Krakovska
 
 D2 = CorrelationDimension_Krakosvka(Xnext');
+
+%% Auto-encoder
+

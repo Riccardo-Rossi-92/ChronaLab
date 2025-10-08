@@ -1,4 +1,3 @@
-
 function [X,Code,parameters] = VAE_Network(X,Predict,parameters,AE)
 
 Layer_En = AE.Layer_En;
@@ -15,8 +14,8 @@ if Predict == 0
 
     parameters.scale.Xmean = dlarray(mean(X,2));
     parameters.scale.Xstd = dlarray(std(X,[],2));
-
-    X = (X - parameters.scale.Xmean)./parameters.scale.Xstd; 
+    
+    X = (X - parameters.scale.Xmean)./parameters.scale.Xstd;
 
     for i = 1 : length(Layer_En)
 
@@ -24,8 +23,7 @@ if Predict == 0
         parameters.("en"+i).bias = dlarray(zeros([Layer_En(i) 1]));
 
         X = fullyconnect(X,parameters.("en"+i).weights,parameters.("en"+i).bias);
-        X = tanh(X);
-
+        % X = relu(X);    
     end
 
     parameters.Code.weights = dlarray(randn([CodeSize size(X,1)]))/3;
@@ -33,7 +31,8 @@ if Predict == 0
 
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);
 
-    X = normrnd(Code,0.0001);
+    % X = normrnd(Code,0);
+    X = Code;
 
     for i = 1 : length(Layer_Dec)
 
@@ -41,7 +40,12 @@ if Predict == 0
         parameters.("dec"+i).bias = dlarray(zeros([Layer_Dec(i) 1]));
 
         X = fullyconnect(X,parameters.("dec"+i).weights,parameters.("dec"+i).bias);
-        X = tanh(X);
+        % X = relu(X);
+        % if (i == length(Layer_Dec))
+        %     X = tanh(X);
+        % else
+        %     X = feval(activationFunction,X);
+        % end
 
     end
 
@@ -54,27 +58,30 @@ elseif Predict == 1
 
     %% Predict
 
-    X = (X - parameters.scale.Xmean)./parameters.scale.Xstd; 
+    X = (X - parameters.scale.Xmean)./parameters.scale.Xstd;
 
     for i = 1 : length(Layer_En)
 
         X = fullyconnect(X,parameters.("en"+i).weights,parameters.("en"+i).bias);
-        X = tanh(X);
+        X = relu(X);
 
     end
 
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);    
-    X = normrnd(Code,0.01);
+    % X = normrnd(Code,0);
+    X = Code;
 
     for i = 1 : length(Layer_Dec)
 
         X = fullyconnect(X,parameters.("dec"+i).weights,parameters.("dec"+i).bias);
-        X = tanh(X);
-
+        X = relu(X);
     end
 
     X = fullyconnect(X,parameters.Output.weights,parameters.Output.bias);
+    % X = tanh(X);
+
     X = X.*parameters.scale.Xstd + parameters.scale.Xmean;
+    
 
 end
 

@@ -27,7 +27,8 @@ end
                     "/analyses";
                     "/analyses/DimensionCausalityDetection";
                     "/analyses/Denoising";
-                    "/Matteo_Scarcella"];
+                    "/Matteo_Scarcella";
+                    "/Matteo_Scarcella/Figures"];
 
     for i = 1 : length(paths_to_add)
         path_new = path_main + paths_to_add(i);

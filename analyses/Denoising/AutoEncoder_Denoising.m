@@ -200,7 +200,7 @@ for epoch = 1 :  3000
 
 end
 
-%%
+%% Results
 
 [dlXpred,dlCode] = VAE_Network(dlXp,1,Results.Network.parameters,VAE);
 
