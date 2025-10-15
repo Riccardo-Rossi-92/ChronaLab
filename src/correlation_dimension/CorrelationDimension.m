@@ -15,6 +15,4 @@ elseif method == "Krakovska"
 end
 
 
-
-
 end
