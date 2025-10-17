@@ -1,11 +1,10 @@
 
-function [gradient,MSE,Reg,Loss] = VAE_ModelGradient_Matteo(parameters,AE,dlXnoise,dlXtarget)
+function [gradient,MSE,Reg,Loss] = VAE_ModelGradient_Matteo(parameters,AE,dlXn)
     
-    [dlXpred,dlCode] = VAE_Network_Matteo(dlXnoise,1,parameters,AE);
+    [dlXpred,dlCode] = VAE_Network_Matteo(dlXn,1,parameters,AE);
     
     % MSE
-    % dlXnoise2 = dlXtarget + randn(size(dlXtarget));
-    MSE = mean((dlXpred - dlXtarget).^2, 'all');
+    MSE = mean((dlXpred - dlXn).^2, 'all');
 
     % L2 Regularization
     mean_code = mean(dlCode,2);

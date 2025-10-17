@@ -22,7 +22,8 @@ end
     paths_to_add = ["/src/correlation_dimension";
                     "/src/generate_time_series";
                     "/src/generate_coupled_systems";
-                    "/src/autoencoder_dimension"
+                    "/src/autoencoder_dimension";
+                    "/src/Brownian_field";
                     "/examples";
                     "/analyses";
                     "/analyses/DimensionCausalityDetection";

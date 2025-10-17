@@ -23,15 +23,12 @@ if Predict == 0
         parameters.("en"+i).bias = dlarray(zeros([Layer_En(i) 1]));
 
         X = fullyconnect(X,parameters.("en"+i).weights,parameters.("en"+i).bias);
-        % X = relu(X);    
     end
 
     parameters.Code.weights = dlarray(randn([CodeSize size(X,1)]))/3;
     parameters.Code.bias = dlarray(zeros([CodeSize 1]));
 
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);
-
-    % X = normrnd(Code,0);
     X = Code;
 
     for i = 1 : length(Layer_Dec)
@@ -40,13 +37,6 @@ if Predict == 0
         parameters.("dec"+i).bias = dlarray(zeros([Layer_Dec(i) 1]));
 
         X = fullyconnect(X,parameters.("dec"+i).weights,parameters.("dec"+i).bias);
-        % X = relu(X);
-        % if (i == length(Layer_Dec))
-        %     X = tanh(X);
-        % else
-        %     X = feval(activationFunction,X);
-        % end
-
     end
 
     parameters.Output.weights = dlarray(randn([OutputSize size(X,1)]))/3;
@@ -63,25 +53,22 @@ elseif Predict == 1
     for i = 1 : length(Layer_En)
 
         X = fullyconnect(X,parameters.("en"+i).weights,parameters.("en"+i).bias);
-        X = relu(X);
+        X = tanh(X);
 
     end
 
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);    
-    % X = normrnd(Code,0);
     X = Code;
 
     for i = 1 : length(Layer_Dec)
 
         X = fullyconnect(X,parameters.("dec"+i).weights,parameters.("dec"+i).bias);
-        X = relu(X);
+        X = tanh(X);
     end
 
     X = fullyconnect(X,parameters.Output.weights,parameters.Output.bias);
-    % X = tanh(X);
 
-    X = X.*parameters.scale.Xstd + parameters.scale.Xmean;
-    
+    X = X.*parameters.scale.Xstd + parameters.scale.Xmean;  
 
 end
 
