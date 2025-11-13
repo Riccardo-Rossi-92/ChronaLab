@@ -19,10 +19,12 @@ end
     % Directory for VirtualLab
     path_main = fileparts(mfilename('fullpath'));
 
-    paths_to_add = ["/src/correlation_dimension";
+    paths_to_add = ["/src/autoencoder";
+                    "/src/correlation_dimension";
                     "/src/generate_time_series";
                     "/src/generate_coupled_systems";
                     "/src/autoencoder_dimension";
+                    "/src/embedding";
                     "/src/Brownian_field";
                     "/examples";
                     "/analyses";

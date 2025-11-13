@@ -38,6 +38,9 @@ X = normrnd(X,1);
 embedding.case = 1;
 embedding.variable = [1];
 embedding.window = 10;
+embedding.resolution = 1;
+embedding.shifts = 1;
+embedding.steps = 1;
 
 %% Embedding clean
 
@@ -203,15 +206,16 @@ end
 %% Results
 
 [dlXpred,dlCode] = VAE_Network(dlXp,1,Results.Network.parameters,VAE);
-
 Xpred = double(extractdata(gather(dlXpred)));
+xpred = ReverseEmbedding(Xpred,embedding.window);
 
 figure(2)
 clf
-plot(dlXn(1,:),'-b')
+plot(dlXp(1,:),'-b')
 hold on
 plot(dlXpred(1,:),'-r')
-plot(Xnext_clean(1,:),'-k')
+plot(xpred)
+plot(Xprev_clean(1,:),'-k')
 
 MSE_data = mean((Xnext-Xnext_clean).^2,'all');
 MSE_AE = mean((Xpred-Xnext_clean).^2,'all');
