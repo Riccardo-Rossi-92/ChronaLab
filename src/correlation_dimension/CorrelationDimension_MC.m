@@ -1,0 +1,38 @@
+
+
+function [D2_mean, D2_std] = CorrelationDimension_MC(X,MC,type,perc)
+
+    %% Input control 
+    
+    if nargin == 0
+        disp("Not enough input")
+        return;
+    elseif nargin == 1
+        MC = 30; 
+        type = "Krakosvka";
+        perc = 0.1;
+    elseif nargin == 2
+        type = "Krakosvka";
+        perc = 0.1;
+    elseif nargin == 3
+        perc = 0.1;
+    end
+
+    %% Monte Carlo evaluation
+
+    N = size(X,2);
+    ind = 1 : N;
+
+    for mc = 1 : MC
+        
+        ind_rand = randsample(ind,floor((1-perc)*N));
+        if type == "Krakosvka"
+            D2_values(mc) = CorrelationDimension_Krakosvka(X(:,ind_rand));
+        end
+
+    end
+
+    D2_mean = mean(D2_values);
+    D2_std = std(D2_values);
+
+end
