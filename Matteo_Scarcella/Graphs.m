@@ -1,274 +1,426 @@
-clear; clc; close;
+%% Rossler phase plot
 
-%% Plot Rossler Attractor
-
-[X,~] = CoupledRossler(0);
+[X,~] = CoupledRossler2(0,300,300*100);
 
 figure(1)
-plot3(X(1:1000,1),X(1:1000,2),X(1:1000,3),'LineWidth',1.5);
+plot3(X(:,1),X(:,2),X(:,3),'LineWidth',1);
 title('3D Phase Plot','FontSize',14)
 
-figure(2)
-for i = 1:3
-    subplot(3,1,i)
-    plot(X(1:1000,i), 'LineWidth', 1.5)
-    grid on
-    xlabel('t')
-    ylabel(['X' num2str(i)])
-end
-sgtitle('Traiettorie delle coordinate X','FontSize',14);
-
+% figure(2)
+% for i = 1:3
+%     subplot(3,1,i)
+%     plot(X(1:1000,i), 'LineWidth', 1.5)
+%     grid on
+%     xlabel('t')
+%     ylabel(['X' num2str(i)])
+% end
+% sgtitle('Traiettorie delle coordinate X','FontSize',14);
 
 
 %% D2 al variare del rumore
+clear; close; clc;
 
-n = 20;
-embedding.variable = 1;
-windows = [3,5,10,20];
-colors = ['r','g','b','c'];
+windows = [2,5,10];
 
-[X,~] = CoupledRossler(0);
-
-figure(3);
-
-for emb = 1:length(windows)
+[X,~] = CoupledRossler2(0,1000,1000*20);
     
-    embedding.window = windows(emb);
+noise_values = [0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10];
+D2_values = zeros(length(noise_values),1);
 
-    noise_values = linspace(1e-3,1e0,n);
-    D2_values = zeros(n,1);
-    
-    for i = 1:n
+figure(1);
+hold on
+for j = 1:length(windows)
+
+    for i = 1:length(noise_values)
         Xnoise = normrnd(X,noise_values(i));
-
-        [Xnext,~] = Embedding(Xnoise,embedding.variable,embedding.window); 
-
+    
+        [Xnext,~] = Embedding(Xnoise,1,windows(j)); 
+    
         D2_values(i) = CorrelationDimension_Krakosvka(Xnext');
-
-        disp("Iteration " + i);
+        
     end
-
-    hold on
-    plot(noise_values,D2_values,'Color',colors(emb));
-
-    drawnow
     
-    % yline(embedding.window,'--','Color',[0.5 0.5 0.5],'LabelHorizontalAlignment','left');
-    
+    plot(noise_values,D2_values,'-','LineWidth',2);    
+
 end
 
-title('D2 dimension respect to the noise','FontSize',14);
-xlabel('Noise level','FontSize',10);
-ylabel('D2 dimension','FontSize',10);
+plot(noise_values,2.01*ones(length(noise_values)),'--','LineWidth',2,'Color',[0.5 0.5 0.5]);
 
+title('D2 respect to 0 mean noise with different values of std dev','FontSize',14);
+xlabel('$\sigma$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+    
 set(gca,'XScale','log');
-ylim([0 14]);
+ylim([0 10]);
+    
 grid off;
-
-legend({'embedding.window = 3','embedding.window = 5','embedding.window = 10','embedding.window = 20'},'Location','northwest');
-
+    
+legend({'Estimation (Embedding=2)','Estimation (Embedding=5)','Estimation (Embedding=10)','Target'},'Location','northwest');
+    
 savefig('Matteo_Scarcella/Figures/D2-noise.fig')
 
-%% D2 al variare del rumore per segnale denoised
+%% D2 al variare del rumore con denoising
+clear; close; clc;
 
-n = 20;
-embedding.variable = 1;
-windows = [3,5,10,20];
-colors = ['r','g','b','c'];
+windows = [2,5,10];
 
-[X,~] = CoupledRossler(0);
-
-figure(4);
-
-for emb = 1:length(windows)
+[X,~] = CoupledRossler2(0,1000,1000*20);
     
-    embedding.window = windows(emb);
+noise_values = [0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10];
+D2_values = zeros(length(noise_values),1);
 
-    noise_values = linspace(1e-3,1e0,n);
-    D2_values = zeros(n,1);
-    % MSE_values = zeros(n,1);
-    
-    for i = 1:n
-        
-        % Applica il rumore
+
+for j = 1:length(windows)
+
+    for i = 1:length(noise_values)
+
         Xnoise = normrnd(X,noise_values(i));
-        
-        % Applica l'embedding
-        [Xnext,~] = Embedding(Xnoise,embedding.variable,embedding.window); 
-        
-        % Rimuove il rumore tramite auto-encoder
-        Xnext_pred = Autoencoder(Xnext);
+    
+        [Xnext,~] = Embedding(Xnoise,1,windows(j)); 
 
-        % Ritorna nello spazio originale
-        Xpred = ReverseEmbedding(Xnext_pred,embedding.window);
+        Xnext_pred = Autoencoder(Xnext,[32 16],3);
+
+        Xpred = ReverseEmbedding(Xnext_pred,windows(j));
+
+        Xnext_denoised = Embedding(Xpred,1,windows(j));
+    
+        D2_values(i) = CorrelationDimension_Krakosvka(Xnext_denoised');
         
-        % Calcola MSE fra predetto e pulito
-        % MSE_values(i) = mean((Xpred-X(embedding.window*2:end,1)).^2,"all");
-        
-        % Riapplica embedding per D2
-        Xnext_pred = Embedding(Xpred,embedding.variable,embedding.window);
-
-        % Calcola D2
-        D2_values(i) = CorrelationDimension_Krakosvka(Xnext_pred');
-
-        disp("Iteration " + i);
-
     end
-    
+
+    figure(2);
     hold on
-    plot(noise_values,D2_values,'LineStyle','-','Color',colors(emb));
-    % plot(noise_values,MSE_values,'LineStyle','--','Color',colors(emb));
     
-    % yline(embedding.window,'--','Color',[0.5 0.5 0.5],'LabelHorizontalAlignment','left');
-    
+    plot(noise_values,D2_values,'-','LineWidth',2);   
+
     drawnow
+
 end
 
-title('D2 dimension respect to the noise','FontSize',14);
-xlabel('Noise level','FontSize',10);
-ylabel('D2 dimension','FontSize',10);
+plot(noise_values,2.01*ones(length(noise_values)),'--','LineWidth',2,'Color',[0.5 0.5 0.5]);
 
+title('D2 respect to 0 mean noise with different values of std dev (after denoising)','FontSize',14);
+xlabel('$\sigma$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+    
 set(gca,'XScale','log');
+ylim([0 10]);
+    
 grid off;
-
-legend({'embedding.window = 3','embedding.window = 5','embedding.window = 10','embedding.window = 20'},'Location','northwest');
-
+    
+legend({'Estimation (Embedding=2)','Estimation (Embedding=5)','Estimation (Embedding=10)','Target'},'Location','northwest');
+    
 savefig('Matteo_Scarcella/Figures/D2denoised-noise.fig')
 
-%% D2 al variare della finestra di embedding (parametrizzata dal rumore)
+%% D2 al variare della finestra di campionamento
+clear;close;clc;
 
-n = 25;
-embedding.variable = 1;
-windows = linspace(1,n,n);
-colors = ['r','g','b','c'];
-noise_values = [1e-3,1e-2,1e-1,1e0];
+SamplingWindows = [10,20,50,100,200,500,1000,2000];
+Embeddings = [2,5,10];
+Precisions = [10,50,100];
+D2 = zeros(length(SamplingWindows),1);
 
-figure(5)
+for p = 1:length(Precisions)
 
-for i = 1:length(noise_values)
-   
-    D2_values = zeros(n,1);
+    figure(p);
+    clf;
+    hold on 
 
-    for emb = 1:n
-        embedding.window = emb;
-        D2_values(emb) = RosslerD2(noise_values(i),embedding);
-    end
+    for j = 1:length(Embeddings)
     
-    plot(windows,D2_values,'Color',colors(i),'LineWidth',1.5);
-   
-    % yline(embedding.window,'--','Color',[0.5 0.5 0.5],'LabelHorizontalAlignment','left');
+        for i = 1:length(SamplingWindows)
     
-    hold on
+            % Genera Rossler
+            [X,~] = CoupledRossler2(0,SamplingWindows(i),SamplingWindows(i)*Precisions(p));
+        
+            % Embedding
+            embedding.window = Embeddings(j);
+            Xnext = Embedding(X,1,embedding.window);
+        
+            % Calcola D2
+            D2(i) = CorrelationDimension_Krakosvka(Xnext');
+        
+        end
+
+        plot(SamplingWindows,D2,'-','LineWidth',2);
+    
+    end    
+
+    plot(SamplingWindows,2.01*ones(length(SamplingWindows)),'--','LineWidth',2,'Color',[0.5 0.5 0.5]);
+    
+    title(sprintf('D2 estimation per sampling size (Precision=t_{end}*%d)',Precisions(p)),'FontSize',14);
+    xlabel('$t_{end}$','Interpreter','latex','FontSize',10);
+    ylabel('$D_2$','Interpreter','latex','FontSize',10);
+    
+    set(gca,'XScale','log');
+    ylim([0 80]);
+    
+    grid off;
+    
+    legend({'Estimation (Embedding=2)','Estimation (Embedding=5)','Estimation (Embedding=10)','Target'},'Location','northwest');
+    
+    path = sprintf('Matteo_Scarcella/Figures/D2Estimation-samplingsize(%d).fig',Precisions(p));
+    savefig(path);
+
 end
 
-title('D2 dimension respect to the embedding size','FontSize',14);
-xlabel('embedding size','FontSize',10);
-ylabel('D2 dimension','FontSize',10);
+%% D2 al variare del numero di punti
+clear;close;clc;
+
+PointsNumber = [1000,2000,5000,10000,20000,50000,100000];
+Embeddings = [2,5,10];
+D2 = zeros(length(PointsNumber),1);
+
+figure(1);
+clf;
+hold on
+
+for j = 1:length(Embeddings)
+
+    for i = 1:length(PointsNumber)
+
+        % Genera Rossler
+        [X,~] = CoupledRossler2(0,1000,PointsNumber(i));
+    
+        % Embedding
+        embedding.window = Embeddings(j);
+        Xnext = Embedding(X,1,embedding.window);
+    
+        % Calcola D2
+        D2(i) = CorrelationDimension_Krakosvka(Xnext');
+    
+    end
+
+    plot(PointsNumber,D2,'-','LineWidth',2);
+
+end
+
+plot(PointsNumber,2.01*ones(length(PointsNumber)),'--','LineWidth',2,'Color',[0.5 0.5 0.5]);
+
+title('D2 estimation per points number','FontSize',14);
+xlabel('$\# points$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+
+set(gca,'XScale','log');
+
+grid off;
+
+legend({'Estimation (Embedding=2)','Estimation (Embedding=5)','Estimation (Embedding=10)','Target'},'Location','northwest');
+
+savefig('Matteo_Scarcella/Figures/D2Estimation-pointsnumber.fig')
+
+%% D2 accoppiato al variare del numero di punti
+clear;close;clc;
+
+PointsNumber = [1000,2000,5000,10000,20000,50000,100000];
+Embeddings = [2,5,10];
+D2 = zeros(length(PointsNumber),1);
+
+figure(1);
+clf;
+hold on
+
+for j = 1:length(Embeddings)
+
+    for i = 1:length(PointsNumber)
+
+        % Genera Rossler
+        [X,Y] = CoupledRossler2(1,1000,PointsNumber(i));
+    
+        % Embedding
+        embedding.window = Embeddings(j);
+        Xnext = Embedding([X Y],[1 4],embedding.window);
+    
+        % Calcola D2
+        D2(i) = CorrelationDimension_Krakosvka(Xnext');
+    
+    end
+
+    plot(PointsNumber,D2,'-','LineWidth',2);
+
+end
+
+plot(PointsNumber,2.01*ones(length(PointsNumber)),'--','LineWidth',2,'Color',[0.5 0.5 0.5]);
+
+title('D2 estimation of coupled system per points number','FontSize',14);
+xlabel('$\# points$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+
+set(gca,'XScale','log');
+
+grid off;
+
+legend({'Estimation (Embedding=2)','Estimation (Embedding=5)','Estimation (Embedding=10)','Target'},'Location','northwest');
+
+savefig('Matteo_Scarcella/Figures/D2EstimationCoupled-pointsnumber.fig')
+
+%% D2 disaccoppiato per numero di punti
+clear;close;clc;
+
+PointsNumber = [1000,2000,5000,10000,20000,50000,100000];
+Embeddings = [2,5,10];
+D2 = zeros(length(PointsNumber),1);
+
+figure(1);
+clf;
+hold on
+
+for j = 1:length(Embeddings)
+
+    for i = 1:length(PointsNumber)
+
+        % Genera Rossler
+        [X,Y] = CoupledRossler2(0,1000,PointsNumber(i));
+    
+        % Embedding
+        embedding.window = Embeddings(j);
+        Xnext = Embedding([X Y],[1 4],embedding.window);
+    
+        % Calcola D2
+        D2(i) = CorrelationDimension_Krakosvka(Xnext');
+    
+    end
+
+    plot(PointsNumber,D2,'-','LineWidth',2);
+
+end
+
+plot(PointsNumber,2.01*ones(length(PointsNumber)),'--','LineWidth',2,'Color',[0.5 0.5 0.5]);
+
+title('D2 estimation of uncoupled system per points number','FontSize',14);
+xlabel('$\# points$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+
+set(gca,'XScale','log');
+
+grid off;
+
+legend({'Estimation (Embedding=2)','Estimation (Embedding=5)','Estimation (Embedding=10)','Target'},'Location','northwest');
+
+savefig('Matteo_Scarcella/Figures/D2EstimationUncoupled-pointsnumber.fig')
+
+
+
+%% Causalità tramite D2(krakovska) al variare del coeff. di accoppiamento
+% Dalle precedenti analisi, si ricavano i valori ritenuti ottimali per la
+% stima della D2 in questo specifico sistema, che sono:
+% - t_end > 500
+% - points_number ~ 10000 (circa t_end*20)
+% - embedding_size = 2-3
+
+clear;close;clc;
+
+CouplingFactors = [0,0.2,0.4,0.6,0.8,1,1.2,1.4,1.6,1.8,2];
+NoiseValues = [1e-3,1e-2,1e-1,1e0];
+Causality = zeros(length(CouplingFactors),length(NoiseValues));
+
+for i = 1:length(CouplingFactors)
+
+    for j = 1:length(NoiseValues)
+
+        % Genera Rossler
+        t_end = 1000;
+        [X,Y] = CoupledRossler2(CouplingFactors(i),t_end,t_end*20);
+        X = normrnd(X,NoiseValues(j));
+        Y = normrnd(Y,NoiseValues(j));
+
+        % Embedding
+        embedding.window = 2;
+        Xnext = Embedding(X,1,embedding.window);
+        Ynext = Embedding(Y,1,embedding.window);
+        XYnext = Embedding([X Y],[1 4],embedding.window);   
+
+        % Calcola D2
+        D2X = CorrelationDimension_Krakosvka(Xnext');
+        D2Y = CorrelationDimension_Krakosvka(Ynext');
+        D2XY = CorrelationDimension_Krakosvka(XYnext');
+    
+        Causality(i,j) = (D2X + D2Y) / D2XY;
+    
+    end
+end
+
+figure(1);
+clf;
+hold on
+
+plot(CouplingFactors,Causality,'-','LineWidth',2);
+
+title('Causality estimation respect to the coupling factor','FontSize',14);
+xlabel('Coupling factor','FontSize',10);
+ylabel('$\frac{D_2(X)+D_2(Y)}{D_2(X,Y)}$','Interpreter','latex','FontSize',10);
 
 grid off;
 
 legend({'\sigma = 10^{-3}','\sigma = 10^{-2}','\sigma = 10^{-1}','\sigma = 10^0'},'Location','northwest');
 
-savefig('Matteo_Scarcella/Figures/D2-embeddingsize.fig')
+savefig('Matteo_Scarcella/Figures/CausalityEstimationD2.fig')
 
-%% Loss respect to code size
+%% Causalità tramite D2(krakovska) al variare del coeff. di accoppiamento con denoising
+% Dalle precedenti analisi, si ricavano i valori ritenuti ottimali per la
+% stima della D2 in questo specifico sistema, che sono:
+% - t_end > 500
+% - points_number ~ 10000 (circa t_end*20)
+% - embedding_size = 2-3
 
-% uso come sistema di test un Rossler (2) e uno spazio di punti di Sobol
-% (5)
+clear;close;clc;
 
-clear; close; clc;
+CouplingFactors = [0,0.2,0.4,0.6,0.8,1,1.2,1.4,1.6,1.8,2];
+NoiseValues = [1e-3,1e-2,1e-1,1e0];
+Causality = zeros(length(CouplingFactors),length(NoiseValues));
 
-embedding.window = 5;
-embedding.variable = 1;
-MaxCodeSize = 10;
-Threshold = 0.1;
-systems = ["Rossler","Sobol"];
-colours = ["b","g"];
+for i = 1:length(CouplingFactors)
 
-figure(6);
-hold on
-for i = 1:length(systems)
+    for j = 1:length(NoiseValues)
 
-    if i == 1
-        X = CoupledRossler(0);
-        X = X(:,1);
-        X = X';
-        embedding.case = 1;
-    elseif i == 2
-        X = sobolset(5);
-        X = X(1:10000,:);
-        X = X';
-        embedding.case = 0;
-    end
-        
-    [D2,Loss] = AutoencoderCorrelationDimension(X,MaxCodeSize,Threshold,embedding);
+        % Genera Rossler
+        t_end = 1000;
+        [X,Y] = CoupledRossler2(CouplingFactors(i),t_end,t_end*20);
+        X = normrnd(X,NoiseValues(j));
+        Y = normrnd(Y,NoiseValues(j));
+
+        % Embedding
+        embedding.window = 20;
+        Xnext = Embedding(X,1,embedding.window);
+        Ynext = Embedding(Y,1,embedding.window);
+        XYnext = Embedding([X Y],[1 4],embedding.window);   
+
+        Xpred = Autoencoder(Xnext,[32 16],3);
+        Ypred = Autoencoder(Ynext,[32 16],3);
+        XYpred = Autoencoder(XYnext,[32 16],6);
+
+        % De-Embedding
+        Xdenoise = ReverseEmbedding(Xpred,embedding.window,1);
+        Ydenoise = ReverseEmbedding(Ypred,embedding.window,1);
+        XYdenoise = ReverseEmbedding(XYpred,embedding.window,2);
+
+        % Re-Embedding
+        XnextDenoise = Embedding(Xdenoise,1,2);
+        YnextDenoise = Embedding(Ydenoise,1,2);
+        XYnextDenoise = Embedding(XYdenoise,[1 2],2);
+
+        % Calcola D2
+        D2X = CorrelationDimension_Krakosvka(XnextDenoise');
+        D2Y = CorrelationDimension_Krakosvka(YnextDenoise');
+        D2XY = CorrelationDimension_Krakosvka(XYnextDenoise');
     
-
-    plot(Loss,'LineWidth',1.5,"Color",colours(i));
-    plot(D2, Loss(D2), 'ro', 'MarkerSize', 10, 'LineWidth', 2,'HandleVisibility','off');
-
-end
-
-title('Loss respect code size','FontSize',14);
-xlabel('Code size','FontSize',10);
-ylabel('Loss (MSE)','FontSize',10);
-
-grid off;
-
-legend({"Rossler attractor","Sobol set"},'Location','northwest');
-
-savefig('Matteo_Scarcella/Figures/Loss-codesize.fig')
-
-%% D2 precision with different methods
-
-% uso un test set, generando punti con distribuzione di Sobol, e calcolo la
-% D2 al variare della dimensione target per valutare i diversi sistemi.
-
-clear; close; clc;
-
-n = [2,5,10,20,30]; % Come nell'articolo di Krakovska
-samples = 10000;
-methods = ["GrassbergerProcaccia","KrakovskaChvostekova","Autoencoder"];
-colors = ['r','g','b'];
-handler = '';
-
-figure(7);
-hold on
-for method = 1:length(methods)
-
-    D2_values = zeros(length(n),1);
-
-    for target_dimension = 1:length(n)
-        X = sobolset(n(target_dimension));
-        X = X(1:samples,:);
-        % X = normrnd(X,1);
-
-        if method == 1
-            D2_values(target_dimension) = correlationDimension(X);
-        elseif method == 2
-            D2_values(target_dimension) = CorrelationDimension_Krakosvka(X);
-        elseif method == 3
-            [D2_values(target_dimension),~] = AutoencoderCorrelationDimension(X',ceil(n(target_dimension)*1.5),0.1);
-
-        end
+        Causality(i,j) = (D2X + D2Y) / D2XY;
+    
     end
-
-    plot(n,D2_values,'Color',colors(method),'LineWidth',1.5);
 end
 
-plot(n,n,'Color',[0.5,0.5,0.5],'LineStyle','--','LineWidth',1.5);
+figure(1);
+clf;
+hold on
 
-title('D2 dimension respect to the intrinsic dimension','FontSize',14);
-xlabel('Intrinsic Dimension','FontSize',10);
-ylabel('D2 dimension','FontSize',10);
+plot(CouplingFactors,Causality,'-','LineWidth',2);
+
+title('Causality estimation respect to the coupling factor with denoising','FontSize',14);
+xlabel('Coupling factor','FontSize',10);
+ylabel('$\frac{D_2(X)+D_2(Y)}{D_2(X,Y)}$','Interpreter','latex','FontSize',10);
 
 grid off;
 
-legend({'Grassberger&Procaccia','Krakovska&Chvostekova','Autoencoder','Desidered Behaviour'},'Location','northwest');
+legend({'\sigma = 10^{-3}','\sigma = 10^{-2}','\sigma = 10^{-1}','\sigma = 10^0'},'Location','northwest');
 
-savefig('Matteo_Scarcella/Figures/D2-methods.fig')
-
-
-
-
-
+savefig('Matteo_Scarcella/Figures/CausalityEstimationD2denoising.fig')

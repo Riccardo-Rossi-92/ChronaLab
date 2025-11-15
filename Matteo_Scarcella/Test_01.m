@@ -217,23 +217,387 @@ for h = 1:dim
     end
 end
 
+plot3(X(:,1),X(:,2),X(:,3),'.');
+
 D2_procaccia = correlationDimension(X);
 D2_krakowska = CorrelationDimension_Krakosvka(X);
 
-disp([D2_procaccia D2_krakowska]);
+[D2,Loss] = AutoencoderCorrelationDimension(X',10,0.1);
 
 figure(1);
-surf(tx,ty,field,'EdgeColor','None');
+plot(Loss);
 
-% Ora, sapendo la dimensione target, applico due auto-encoder
-Xpred1 = Autoencoder(X',[100 50],2);
-Xpred2 = Autoencoder(X',[100 50],3);
+disp(D2);
+% 
+% disp([D2_procaccia D2_krakowska]);
+% 
+% figure(1);
+% surf(tx,ty,field,'EdgeColor','None');
+% 
+% % Ora, sapendo la dimensione target, applico due auto-encoder
+% Xpred1 = Autoencoder(X',[100 50],2);
+% Xpred2 = Autoencoder(X',[100 50],3);
+% 
+% % Faccio la differenza fra i due segnali e ne calcolo D2 tramite krakovska
+% difference = Xpred2 - Xpred1;
+% D2_difference = CorrelationDimension_Krakosvka(difference);
+% 
+% disp(D2_difference);
 
-% Faccio la differenza fra i due segnali e ne calcolo D2 tramite krakovska
-difference = Xpred2 - Xpred1;
-D2_difference = CorrelationDimension_Krakosvka(difference);
+%% Metodo Riccardo
 
-disp(D2_difference);
+% L'idea è calcolare la dimensione D2 con metodo krakovska sul segnale
+% uscente dal codice
+
+clear; close; clc;
+
+% Create data
+X = CoupledRossler(0);
+Xmean = mean(X(:,1));
+Xstd = std(X(:,1));
+
+% Embedding
+embedding.variable = [1 2 3];
+embedding.window = 5;
+[Xnext,~] = Embedding(X,embedding.variable,embedding.window);
+
+% Trasforma in deep learning array
+dlXn = dlarray(Xnext,'CB');
+
+% Network architecture
+VAE.CodeSize = 2;
+N = size(dlXn,2);
+VAE.Layer_En = [100];
+VAE.Layer_Dec = flip(VAE.Layer_En);
+VAE.CodeSize = VAE.CodeSize;
+
+% Inizializza la rete
+[~,~,parameters] = VAE_Network_Matteo(dlXn,0,[],VAE);
+
+% Model gradient
+%accfun = dlaccelerate(@VAE_ModelGradient_Matteo);
+
+% training options
+VAE.LearningRate0 = 0.001;
+VAE.DecayRate0 = 0.001; % più è basso, più è lento
+VAE.MiniBatch = 500; 
+VAE.MiniBatch = min(VAE.MiniBatch,N);
+Saturation_checks_threshold = 25;
+iteration = 0;
+averageGrad = [];
+averageSqGrad = [];
+
+% Addestramento
+
+BestLoss = 10;
+Saturation_checks = 0;
+
+for epoch = 1 : 5000
+
+    % mescolo l'intero dataset
+    idx = randperm(N); 
+
+    for i = 1 : ceil(N / VAE.MiniBatch)
+
+        % update iteration
+        iteration = iteration + 1;
+
+        % minibatch (in questo modo vedo tutti i campioni esattamente una
+        % sola volta)
+        startIdx = (i-1)*VAE.MiniBatch + 1;
+        endIdx   = min(i*VAE.MiniBatch, N);  % evita di uscire dai limiti
+        batchIdx = idx(startIdx:endIdx);
+        
+        dlXnBatch = dlXn(:,batchIdx);
+
+        % model gradient
+        [gradients, ~, ~, Loss] = dlfeval(dlaccelerate(@VAE_ModelGradient_Matteo),...
+            parameters,VAE,dlXnBatch);
+
+        % Learning rate
+        LearningRate = VAE.LearningRate0./(1+VAE.DecayRate0*iteration);
+
+        %ADAM
+        [parameters,averageGrad,averageSqGrad] = adamupdate(parameters,gradients,averageGrad, ...
+            averageSqGrad,iteration,LearningRate);
+        
+    end
+
+    % Saturation checks
+    Loss = double(extractdata(gather(Loss)));
+    Results.Network.parameters = parameters;
+
+    if Loss < 0.9*BestLoss % valore più alto -> criterio più rigido
+        
+        Saturation_checks = 0;
+        BestLoss = Loss;
+    else
+        Saturation_checks = Saturation_checks + 1;
+    end
+
+    if Saturation_checks > Saturation_checks_threshold
+        break
+    end
+
+end
+
+% Predict 
+[dlXpred,~] = VAE_Network_Matteo(dlXn,1,Results.Network.parameters,VAE,0);
+[dlXpred_code,~] = VAE_Network_Matteo(dlXn,1,Results.Network.parameters,VAE,1);
+
+% Extract data
+Xpred_code = double(extractdata(gather(dlXpred_code)));
+Xpred = double(extractdata(gather(dlXpred)));
+
+% Calcola D2 (krakovska) per entrambi i segnali
+% D2_normal = CorrelationDimension_Krakosvka(Xpred');
+D2_code = CorrelationDimension_Krakosvka(Xpred_code');
+
+% De-embedding
+% Xpred_code = ReverseEmbedding(Xpred_code,2);
+% Xpred = ReverseEmbedding(Xpred,embedding.window);
+
+%% plot
+figure(1);
+hold on
+plot( ((X(embedding.window*2:end,1) - Xmean) / Xstd) );
+plot( ((Xpred - Xmean) / Xstd) );
+plot( Xpred_code );
+
+legend({'X','Xpred','Xpred (from code)'},'Location','northwest');
+
+disp([D2_normal D2_code]);
+
+%% Test Metodo IDEA
+
+% Addestra una rete neurale di tipo auto-encoder ma con un pre-strato di
+% codice latente, collegato con il codice latente attraverso una
+% connessione di tipo uno a uno. Ciascun neurone del codice latente viene
+% pesato, e la somma dei pesi viene minimizzata per trovare la ID
+
+clear; close; clc;
+
+% X = sobolset(6);
+% X = X(1:10000,:);
+% X = X';
+
+% X = CoupledRossler(0);
+% embedding.window = 3;
+% embedding.variable = [1 2];
+% [Xnext,~] = Embedding(X,embedding.variable,embedding.window);
+
+% Genero una superficie browniana (in teoria ID = 2.5
+% rng(2);
+% H = 0.5;
+% n_points = 2^9;
+% [field,~,~,~] = Brownian_field(H,n_points);
+% field = field(1:end/2,1:end/2); % Estrae la sotto-matrice per rimuovere i NaN
+% dim = size(field,1);
+% tx = linspace(0,1,dim);
+% ty = linspace(0,1,dim);
+
+% % per calcolare la dimensione d2 con krakovska devo passare da uno
+% % spazio di matrice a uno spazio di vettore a 3 componenti (x,y,z).
+% X = zeros(dim*dim,3);
+% for h = 1:dim
+%     for k = 1:dim
+%         X((h-1)*dim+k,1) = tx(h);
+%         X((h-1)*dim+k,2) = ty(k);
+%         X((h-1)*dim+k,3) = field(h,k);
+%     end
+% end
+% 
+% X = X';
+% disp(CorrelationDimension_Krakosvka(X));
+% % plot3(X(:,1),X(:,2),X(:,3),'.');
+
+[~,X] = LorenzAttractor(10,8/3,30,100);
+embedding.window = 5;
+embedding.variable = 1;
+[Xnext,~] = Embedding(X,embedding.variable,embedding.window);
+% Xnext = normrnd(Xnext,1);
+
+% Trasforma in deep learning array
+dlXn = dlarray(Xnext,'CB');
+
+% Network architecture
+VAE.CodeSize = 8;
+N = size(dlXn,2);
+VAE.Layer_En = [64 32 16];
+VAE.Layer_Dec = flip(VAE.Layer_En);
+VAE.CodeSize = VAE.CodeSize;
+
+% Inizializza la rete
+[~,~,parameters] = VAE_NetworkWeighted(dlXn,0,[],VAE);
+
+BestCurrentWeight = 1;
+
+% training options
+VAE.LearningRate0 = 0.001;
+VAE.DecayRate0 = 0; % più è basso, più è lento
+VAE.MiniBatch = 500; 
+VAE.MiniBatch = min(VAE.MiniBatch,N);
+Saturation_checks_threshold = 100;
+iteration = 0;
+averageGrad = [];
+averageSqGrad = [];
+
+% Addestramento
+BestLoss = 10;
+Saturation_checks = 0;
+MaxEpochs = 5000;
+
+Loss_history = zeros(MaxEpochs ,1);
+MSE_history  = zeros(MaxEpochs ,1);
+Reg_history  = zeros(MaxEpochs ,1);
+
+ActiveNeurons = VAE.CodeSize;
+
+% Create plot
+figure(1);
+clf;
+hold on;
+set(gca,'YScale','log');
+h1 = plot(NaN, NaN, 'b', 'LineWidth', 2);
+h2 = plot(NaN, NaN, 'r', 'LineWidth', 2);
+h3 = plot(NaN, NaN, 'g', 'LineWidth', 2);
+legend({'Loss','MSE','Reg'});
+
+for epoch = 1 : MaxEpochs 
+
+    % mescolo l'intero dataset
+    idx = randperm(N); 
+
+    for i = 1 : ceil(N / VAE.MiniBatch)
+
+        % update iteration
+        iteration = iteration + 1;
+
+        % minibatch (in questo modo vedo tutti i campioni esattamente una
+        % sola volta)
+        startIdx = (i-1)*VAE.MiniBatch + 1;
+        endIdx   = min(i*VAE.MiniBatch, N);  % evita di uscire dai limiti
+        batchIdx = idx(startIdx:endIdx);
+        
+        dlXnBatch = dlXn(:,batchIdx);
+
+        % model gradient
+        [gradients, MSE, Reg, Loss] = dlfeval(dlaccelerate(@VAE_ModelGradientWeighted),...
+            parameters,VAE,dlXnBatch);
+
+        % Learning rate
+        LearningRate = VAE.LearningRate0./(1+VAE.DecayRate0*iteration);
+
+        %ADAM
+        [parameters,averageGrad,averageSqGrad] = adamupdate(parameters,gradients,averageGrad, ...
+            averageSqGrad,iteration,LearningRate);       
+    end
+
+    % Criterio di arresto
+    Loss_history(epoch) = Loss;
+    MSE_history(epoch) = MSE;
+    Reg_history(epoch) = Reg;
+    
+    set(h1, 'YData', Loss_history   , 'XData', 1:numel(Loss_history));
+    set(h2, 'YData', MSE_history,  'XData', 1:numel(MSE_history));
+    set(h3, 'YData', Reg_history,  'XData', 1:numel(Reg_history));
+    drawnow limitrate;
+    
+    Weights = parameters.CO1.weights;
+    
+    % Se ho disattivato un neurone, aggiorno il numero di neuroni attivi e
+    % riparto da zero 
+    if sum(Weights>0) < ActiveNeurons
+        ActiveNeurons = sum(Weights>0);
+        BestCurrentWeight = 1;
+        BestLoss = Loss;
+    end
+    
+    % Assegno il peso corrente
+    CurrentWeight = min(Weights(Weights>0));    
+
+    if Loss < 1*BestLoss
+        Results.Network.parameters = parameters;
+        Saturation_checks = 0;
+        BestLoss = Loss;
+    else
+        Saturation_checks = Saturation_checks + 1;
+    end
+
+    if Saturation_checks > Saturation_checks_threshold
+        break
+    end
+    
+    if (mod(epoch,5) == 0)
+        disp(['---' newline ...
+            'Epoca: ' num2str(epoch) newline ...
+            'Loss: ' num2str(Loss) newline ...
+            'Neuroni attivi: ' num2str(ActiveNeurons) newline ...
+            'Somma dei pesi attivi: ' num2str(sum(Weights(Weights>0))) newline ...
+            'Ultimo peso attivo: ' num2str(CurrentWeight) newline ...
+            'Saturation Checks: ' num2str(Saturation_checks) newline ...
+            '---']);
+    end
+end
+
+%% Predict
+[Xpred,LatentCode,~] = VAE_NetworkWeighted(dlXn,1,Results.Network.parameters,VAE);
+
+% Extract data
+LatentCode = double(extractdata(gather(LatentCode)));
+
+[coeff, score, latent, tsquared, explained] = pca(LatentCode);
+
+%%
+var_cum = cumsum(explained);
+
+target_var = 99.99; % percentuale di varianza che vuoi considerare
+
+x = 1:length(explained);
+y = cumsum(explained);
+vx = 1:0.001:length(explained);
+vq = interp1(x,y,vx,'linear');
+
+ID_est = vx(find(vq >= target_var,1));
+
+disp(ID_est);
+plot(vx,vq);
+
+%% Provo invece un metodo manuale, riducendo manualmente i neuroni del code
+
+clear; close; clc;
+
+X = LorenzAttractor(10,8/3,30,100);
+
+embedding.case = 1;
+embedding.variable = 1;
+embedding.window = 5;
+[D2,Loss] = AutoencoderCorrelationDimension(X',5,0.1,embedding);
+
+figure(1);
+clf;
+normLoss = (Loss - min(Loss)) ./ (max(Loss)-min(Loss));
+plot(normLoss);
+
+%% Test autoencoder on rossler
+clear;close;clc;
+
+t_end = 1000;
+[X,~] = CoupledRossler2(0,t_end,t_end*20);
+X = normrnd(X,1);
+
+embedding.window = 20;
+Xnext = Embedding(X,1,embedding.window);
+
+Xpred = Autoencoder(Xnext,[32 16],3);
+
+Xdenoise = ReverseEmbedding(Xpred,embedding.window,1);
+
+figure(1);
+clf;
+hold on
+plot(X(embedding.window*2:end,1));
+plot(Xdenoise);
 
 
 

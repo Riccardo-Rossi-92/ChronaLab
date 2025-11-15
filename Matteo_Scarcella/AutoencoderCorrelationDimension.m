@@ -10,7 +10,7 @@ Loss = zeros(MaxCodeSize,1);
 
 Xdefault = X;
 
-% Populates the Loss vector
+% Finding the loss values
 for CodeSize = MaxCodeSize:-1:1
     
     X = Xdefault;
@@ -20,7 +20,7 @@ for CodeSize = MaxCodeSize:-1:1
         [X,~] = Embedding(X',embedding.variable,embedding.window);
     end
 
-    Xpred = Autoencoder(X,[50],CodeSize);
+    Xpred = Autoencoder(X,[64 32 16],CodeSize);
 
     % De-Embedding
     if (embedding.case == 1)
@@ -29,6 +29,8 @@ for CodeSize = MaxCodeSize:-1:1
     end
 
     Loss(CodeSize) = mean((Xpred-X).^2,"all");
+
+    disp("Iteration completed - Code size: " + CodeSize);
 
 end
 
