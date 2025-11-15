@@ -23,13 +23,15 @@ end
                     "/src/generate_time_series";
                     "/src/generate_coupled_systems";
                     "/src/autoencoder_dimension";
-                    "/src/Brownian_field";
+                    "/src/autoencoder_matteo";
+                    "/src/generate_lorenz_system";
+                    "/src/utils_matteo";
                     "/examples";
                     "/analyses";
                     "/analyses/DimensionCausalityDetection";
                     "/analyses/Denoising";
                     "/Matteo_Scarcella";
-                    "/Matteo_Scarcella/Figures"];
+                    "/Matteo_Scarcella/Figures";];
 
     for i = 1 : length(paths_to_add)
         path_new = path_main + paths_to_add(i);
