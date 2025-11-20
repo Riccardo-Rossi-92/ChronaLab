@@ -21,7 +21,6 @@ if UseGPU == 1
         UseGPU = 0;
         disp("No available GPU")
     end
-
 else
     clear all; clc;
     UseGPU = 0;
@@ -136,7 +135,7 @@ AE.Saturation_checks_threshold = 100;
 
 % initialise and test
 [~,~,~,~,parameters] = IAE_Network(dlXp(:,1:10),dlYp(:,1:10),0,[],AE);
-[dlXpred,dlYpred,dlCX,dlCY] = IAE_Network(dlXp(:,1:51),dlYp(:,1:51),1,parameters,AE);
+[dlXnext,dlYnext,dlCX,dlCY] = IAE_Network(dlXp(:,1:51),dlYp(:,1:51),1,parameters,AE);
 
 % Model gradient
 accfun = dlaccelerate(@IAE_ModelGradient);
@@ -308,4 +307,5 @@ for epoch = 1 :  AE.max_epochs
     disp("Saturation Checks = " + Saturation_checks)
 
 end
+
 
