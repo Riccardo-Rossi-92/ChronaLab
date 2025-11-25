@@ -19,19 +19,22 @@ end
     % Directory for VirtualLab
     path_main = fileparts(mfilename('fullpath'));
 
-    paths_to_add = ["/src/correlation_dimension";
+    paths_to_add = ["/src/autoencoder";
+                    "/src/correlation_dimension";
                     "/src/generate_time_series";
                     "/src/generate_coupled_systems";
                     "/src/autoencoder_dimension";
-                    "/src/autoencoder_matteo";
-                    "/src/generate_lorenz_system";
-                    "/src/utils_matteo";
+                    "/src/embedding";
                     "/examples";
                     "/analyses";
                     "/analyses/DimensionCausalityDetection";
                     "/analyses/Denoising";
                     "/Matteo_Scarcella";
-                    "/Matteo_Scarcella/Figures";];
+                    "/Matteo_Scarcella/models";
+                    "/Matteo_Scarcella/src/autoencoder_matteo";
+                    "/Matteo_Scarcella/src/generate_lorenz_system";
+                    "/Matteo_Scarcella/src/generate_rossler_system";
+                    "/Matteo_Scarcella/src/utils"];
 
     for i = 1 : length(paths_to_add)
         path_new = path_main + paths_to_add(i);

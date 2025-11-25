@@ -1,20 +1,100 @@
-%% Rossler phase plot
+%% Grafici delle dimensioni D2/ID al variare del rumore
+clear; close; clc;
 
-[X,~] = CoupledRossler2(0,300,300*100);
+% load Matteo_Scarcella/Models/LossNoise.mat
+load Matteo_Scarcella/Models/Dlorenz.mat
+load Matteo_Scarcella/Models/Drossler.mat
+load Matteo_Scarcella/Models/Dlorenzuncoupled.mat
+load Matteo_Scarcella/Models/Dlorenzcoupled.mat
+
+NoiseValues = [0.01,0.1,1];
 
 figure(1)
-plot3(X(:,1),X(:,2),X(:,3),'LineWidth',1);
-title('3D Phase Plot','FontSize',14)
+hold on
+errorbar(NoiseValues,squeeze(Dlorenz(1,1,:)),squeeze(Dlorenz(1,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Dlorenz(2,1,:)),squeeze(Dlorenz(2,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Dlorenz(3,1,:)),squeeze(Dlorenz(3,2,:)),"LineWidth",1.5);
 
-% figure(2)
-% for i = 1:3
-%     subplot(3,1,i)
-%     plot(X(1:1000,i), 'LineWidth', 1.5)
-%     grid on
-%     xlabel('t')
-%     ylabel(['X' num2str(i)])
-% end
-% sgtitle('Traiettorie delle coordinate X','FontSize',14);
+set(gca,'XScale','log');
+
+% title('D2 al variare del rumore','FontSize',14);
+xlabel('$\sigma$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+
+grid off
+
+legend({"Procaccia","Krakosvka","Autoencoder"},"Location","Northwest");
+
+figure(2)
+hold on
+errorbar(NoiseValues,squeeze(Drossler(1,1,:)),squeeze(Drossler(1,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Drossler(2,1,:)),squeeze(Drossler(2,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Drossler(3,1,:)),squeeze(Drossler(3,2,:)),"LineWidth",1.5);
+
+set(gca,'XScale','log');
+
+% title('D2 al variare del rumore','FontSize',14);
+xlabel('$\sigma$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+
+grid off
+
+legend({"Procaccia","Krakosvka","Autoencoder"},"Location","Northwest");
+
+figure(3)
+hold on
+errorbar(NoiseValues,squeeze(Dlorenzuncoupled(1,1,:)),squeeze(Dlorenzuncoupled(1,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Dlorenzuncoupled(2,1,:)),squeeze(Dlorenzuncoupled(2,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Dlorenzuncoupled(3,1,:)),squeeze(Dlorenzuncoupled(3,2,:)),"LineWidth",1.5);
+
+set(gca,'XScale','log');
+
+% title('D2 al variare del rumore','FontSize',14);
+xlabel('$\sigma$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+
+grid off
+
+legend({"Procaccia","Krakosvka","Autoencoder"},"Location","Northeast");
+
+figure(4)
+hold on
+errorbar(NoiseValues,squeeze(Dlorenzcoupled(1,1,:)),squeeze(Dlorenzcoupled(1,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Dlorenzcoupled(2,1,:)),squeeze(Dlorenzcoupled(2,2,:)),"LineWidth",1.5);
+errorbar(NoiseValues,squeeze(Dlorenzcoupled(3,1,:)),squeeze(Dlorenzcoupled(3,2,:)),"LineWidth",1.5);
+
+set(gca,'XScale','log');
+
+% title('D2 al variare del rumore','FontSize',14);
+xlabel('$\sigma$','Interpreter','latex','FontSize',10);
+ylabel('$D_2$','Interpreter','latex','FontSize',10);
+
+grid off
+
+legend({"Procaccia","Krakosvka","Autoencoder"},"Location","Northeast");
+
+%% Grafici delle loss
+clear; close; clc;
+
+load Matteo_Scarcella/Models/Loss.mat
+% load Drossler.mat 
+
+figure(1);
+hold on
+plot(log(Loss(:,1)),'LineWidth',1);
+plot(2,log(Loss(2,1)),'o','Color',[1 0 0],'MarkerSize',10,'LineWidth',1);
+
+xlabel('\# neuroni nel codice latente','Interpreter','latex','FontSize',10);
+ylabel('log-loss','Interpreter','latex','FontSize',10);
+
+figure(2);
+hold on
+plot(log(Loss(:,3)),'LineWidth',1);
+plot(3,log(Loss(3,3)),'o','Color',[1 0 0],'MarkerSize',10,'LineWidth',1);
+
+xlabel('\# neuroni nel codice latente','Interpreter','latex','FontSize',10);
+ylabel('log-loss','Interpreter','latex','FontSize',10);
+
 
 
 %% D2 al variare del rumore

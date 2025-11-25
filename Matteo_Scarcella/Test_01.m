@@ -599,5 +599,121 @@ hold on
 plot(X(embedding.window*2:end,1));
 plot(Xdenoise);
 
+%% prova
+
+MaxCodeSize = 8;
+embedding.case = 1;
+embedding.variable = 1;
+embedding.window = 5;
+
+[X,~] = CoupledRossler2(0);
+X = X';
+
+Loss = zeros(MaxCodeSize,1);
+
+Xdefault = X;
+
+% Finding the loss values
+for CodeSize = MaxCodeSize:-1:1
+    
+    X = Xdefault;
+
+    % Embedding
+    if (embedding.case == 1)
+        [X,~] = Embedding(X',embedding.variable,embedding.window);
+    end
+
+    Xpred = Autoencoder(X,[32 16],CodeSize);
+
+    % De-Embedding
+    if (embedding.case == 1)
+        X = ReverseEmbedding(X,embedding.window);
+        Xpred = ReverseEmbedding(Xpred,embedding.window);
+    end
+
+    Loss(CodeSize) = mean((Xpred-X).^2,"all");
+
+    disp("Iteration completed - Code size: " + CodeSize);
+
+end
+
+%% Find the elbow of the loss (corresponding to the D2 value)
+D2 = 1;
+Loss = (Loss-min(Loss)) ./ (max(Loss)-min(Loss));
+LossDerivative = gradient(Loss);
+
+clf;
+hold on;
+plot(Loss);
+plot(LossDerivative);
+
+disp(find(abs(LossDerivative)<0.1,1));
 
 
+%%
+
+figure;
+ax = axes;
+axis off;
+view(3); axis equal;
+hold on
+
+c = Cube([0 0 0], 1);
+
+c.populateChildren();
+for i = 1:length(c.children)
+    c.children(i).populateChildren();
+    for j = 1:length(c.children(i).children)
+        c.children(i).children(j).populateChildren();
+    end
+end
+
+leaves = getLeaves(c);
+for i = 1:length(leaves)
+    leaves(i).drawCube(ax, 'FaceColor', [0.5 0.5 0.5], 'FaceAlpha', 0.05);
+end
+
+function leaves = getLeaves(obj)
+    % Se il cubo è foglia, torna solo lui
+    if isempty(obj.children)
+        leaves = obj;
+        return;
+    end
+
+    % Altrimenti aggrega le foglie dei figli
+    leaves = Cube.empty;
+    for k = 1:numel(obj.children)
+        leaves = [leaves; getLeaves(obj.children(k))];
+    end
+end
+
+%% 
+k=8117;
+for i = 1:5000
+    x = -0.5 + rand(1,3);
+    for j = 1:length(leaves)
+        if leaves(j).checkInCube(x)
+            k = k + 1;
+            % plot3(x(1),x(2),x(3),'.');
+            X(k,:) = x;
+            break;
+        end
+    end
+end
+
+%% TEST PER PCA
+clear; close; clc;
+
+hold on
+
+[~,X] = CoupledLorenz(0,200,20000);
+Xemb = phaseSpaceReconstruction([X(:,1) X(:,4)],5,5);
+[coeff, score, latent, tsquared, explained] = pca(Xemb);
+figure(1);
+plot(rescale(cumsum(latent),0,1))
+
+[~,X] = CoupledLorenz(2.7,200,20000);
+Xemb = phaseSpaceReconstruction([X(:,1) X(:,4)],5,5);
+[coeff, score, latent, tsquared, explained] = pca(Xemb);
+figure(1);
+plot(rescale(cumsum(latent),0,1))
