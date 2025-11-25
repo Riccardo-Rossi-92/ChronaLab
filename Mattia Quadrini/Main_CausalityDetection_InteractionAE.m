@@ -45,7 +45,7 @@ Case = "Rossler-Rossler"; % Custom, Rossler-Rossler, ...
 if Case == "Rossler-Rossler"
 
     % generate coupled rossler system (see CoupledRossler for details)
-    C = 0.01;
+    C = 0.6;
     [X,Y,t] = CoupledRossler(C);
 
     S = [X,Y];
