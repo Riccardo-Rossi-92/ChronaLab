@@ -35,6 +35,12 @@ function [D2_mean, D2_std, Loss] = CorrelationDimension_MC(X,MC,type,perc)
             ind_rand = randsample(ind,floor((1-perc)*N));
             D2_values(mc) = CorrelationDimension_Krakosvka(X(ind_rand,:));
         end
+    
+    elseif type == "TorVergata"
+        for mc = 1 : MC
+            ind_rand = randsample(ind,floor((1-perc)*N));
+            D2_values(mc) = CorrelationDimension_TorVergata(X(ind_rand,:));
+        end
         
     elseif type == "Autoencoder"
         [D2_values,Loss] = AutoencoderCorrelationDimension(X,10,0.2);

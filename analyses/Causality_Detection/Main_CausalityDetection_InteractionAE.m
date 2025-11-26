@@ -33,7 +33,7 @@ end
 % Here you can upload your data or generate a dataset for testing
 % Some standard examples are uploaded here
 
-Case = "Rossler-Rossler"; % Custom, Rossler-Rossler, ...
+Case = "Lorenz-Lorenz"; % Custom, Rossler-Rossler, ...
 
 %%%%%%%%%%%%%%%%% Rossler Case %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,6 +45,11 @@ if Case == "Rossler-Rossler"
 
     S = [X,Y];
     clear X Y
+
+elseif Case == "Lorenz-Lorenz"
+
+    [~,Xlorenz] = CoupledLorenz(1,200,20000); 
+    S = Xlorenz;
 end
 
 %% Embedding System X
@@ -95,7 +100,7 @@ dlYS = dlarray(std(Ynext,[],2),'CB');
 % Configuration
 
 % Network architecture
-AE.CodeSize = [2 2];
+AE.CodeSize = [4 4];
 AE.Layer_En = [30 30 30];
 AE.Layer_Dec = flip(AE.Layer_En);
 

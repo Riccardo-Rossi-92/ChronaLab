@@ -14,7 +14,7 @@ function D2 = CorrelationDimension_Krakosvka(X)
 
     T = size(X,1); % Number of data points
     % idx, D
-    [idx,D] = knnsearch(X,X,'K',floor(0.01*T)+10,'NSMethod','kdtree','Distance','euclidean'); %'chebychev');
+    [idx,D] = knnsearch(X,X,'K',floor(0.1*T)+10,'NSMethod','kdtree','Distance','euclidean'); %'chebychev');
     % Initialize an array to store the local estimations
     D_local = nan(1,T);    
     for i = 1:T   
@@ -44,5 +44,6 @@ function D2 = CorrelationDimension_Krakosvka(X)
             D_local(i) = log(2)/log(D(i,pom2)/D(i,pom1));
         end
     end         
+    
     D2 = median(D_local,'omitnan');
 end
