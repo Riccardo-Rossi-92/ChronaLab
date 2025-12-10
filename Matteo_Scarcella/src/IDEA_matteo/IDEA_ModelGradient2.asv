@@ -1,0 +1,19 @@
+
+function [gradient,Loss] = IDEA_ModelGradient2(parameters,AE,dlXn)
+    
+    [dlXpred,dlCode] = IDEA_Network2(dlXn,1,parameters,AE);
+    
+    % MSE
+    MSE = mean((dlXpred - dlXn).^2, 'all') / parameters.scale.Xrange;
+    % ExpVar = 1 - var(dlXpred(:) - dlXn(:)) / var(dlXn(:));
+
+    % Total loss
+    Loss = MSE;
+
+    % gradient
+    gradient = dlgradient(Loss,parameters);
+
+end
+
+
+

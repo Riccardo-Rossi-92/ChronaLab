@@ -1,6 +1,9 @@
-function [X,Code,parameters] = VAE_Network(X,Predict,parameters,AE,codePrediction)
+function [X,Code,parameters] = IDEA_Network(X,Predict,parameters,AE,proj,codePrediction)
 
 if nargin == 4
+    codePrediction = 0;
+    proj = 0;
+elseif nargin == 5
     codePrediction = 0;
 end
 
@@ -29,11 +32,18 @@ if Predict == 0
         X = fullyconnect(X,parameters.("en"+i).weights,parameters.("en"+i).bias);
     end
 
+    % Codice latente
     parameters.Code.weights = dlarray(randn([CodeSize size(X,1)]))/3;
     parameters.Code.bias = dlarray(zeros([CodeSize 1]));
 
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);
     X = Code;
+
+    % Cancel-Out 1
+    parameters.CO1.weights = dlarray(0.5*ones([CodeSize 1]));
+
+    % Cancel-Out 2
+    parameters.CO2.weights = dlarray(0.5*ones([CodeSize 1]));
 
     for i = 1 : length(Layer_Dec)
 
@@ -61,9 +71,21 @@ elseif Predict == 1
 
     end
 
+    % Codice latente
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);    
     X = Code;
-    % X = normrnd(X,0.1);
+
+    % Cancel-Out 1
+    if proj == 1
+        idx = size(Code,1) - length(parameters.CO1.weights(parameters.CO1.weights>0)) + 1;
+        parameters.CO1.weights(idx) = -0.001;
+        X = X .* relu(parameters.CO1.weights);
+    else
+        X = X .* relu(parameters.CO1.weights);
+    end
+
+    % Cancel-Out 2
+    X = X .* relu(parameters.CO2.weights);
 
     for i = 1 : length(Layer_Dec)
 

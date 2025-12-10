@@ -22,7 +22,7 @@ for CodeSize = MaxCodeSize:-1:1
 end
 
 % Calcola il punto a gomito
-LogLossDerivativeNorm = rescale(diff(movmean(log(Loss),1)).^2,0,1); % Il quadrato penalizza le grosse variazioni rispetto a quelle piccole (???)
+LogLossDerivativeNorm = rescale(abs(diff(movmean(log(Loss),1))),0,1); 
 
 k = 0;
 ID = 0;

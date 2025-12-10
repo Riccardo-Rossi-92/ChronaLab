@@ -34,6 +34,9 @@ end
                     "/Matteo_Scarcella/src/autoencoder_matteo";
                     "/Matteo_Scarcella/src/generate_lorenz_system";
                     "/Matteo_Scarcella/src/generate_rossler_system";
+                    "/Matteo_Scarcella/src/IDEA";
+                    "/Matteo_Scarcella/src/IDEA_matteo";
+                    "/Matteo_Scarcella/src/TwoNN";
                     "/Matteo_Scarcella/src/utils"];
 
     for i = 1 : length(paths_to_add)

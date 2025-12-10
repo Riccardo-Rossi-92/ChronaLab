@@ -1,10 +1,15 @@
-function [D2,D2std] = CorrelationDimension_TorVergata(X)
+function [D2,D2std] = CorrelationDimension_TorVergata(X,RegressionType,K)
 
-RegressionType = "Removal"; % "Standard", "Weighted; "Moving" ; "Plateau"
+if nargin == 1
+    RegressionType = "Removal"; % "Standard", "Weighted; "Moving" ; "Plateau"
+    K = 200;
+elseif nargin == 2
+    K = 200;
+end
+
 RegressionWindow = 30;
 
 N = size(X,1);
-K = 200;
 
 % find K-nearest
 [~, D] = knnsearch(X, X, 'K', K+1);
@@ -15,6 +20,7 @@ r = mean(D, 1);
 
 % correlation
 C = (1:K) / N;
+% C = r / N;
 
 % log-scale
 log_r = log(r);
@@ -23,8 +29,9 @@ log_C = log(C);
 if RegressionType == "Standard"
 
     M = [log_r; ones(size(log_r))];
-    b = linsolve(M',log_C);
-
+    % b = linsolve(M',log_C');
+    b = M' \ log_C';
+        
     D2 = b(1);
     D2std = nan;
 elseif RegressionType == "Weighted"
