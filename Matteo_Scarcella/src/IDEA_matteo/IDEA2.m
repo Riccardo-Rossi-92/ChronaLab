@@ -1,0 +1,41 @@
+function [ID,Losses] = IDEA2(X,EncoderStructure,CodeSize,Threshold)
+
+Losses = zeros(CodeSize,1);
+
+parfor (code = 1:CodeSize)
+
+    disp("Addestramento con spazio latente a dimensione " + num2str(code));
+    Losses(code) = IDEA2_SingleIteration(X,EncoderStructure,code);
+
+end
+
+if isscalar(Threshold)
+    ID = find(Losses < Threshold,1,'first');
+    if isempty(ID)
+        ID = CodeSize; % Saturazione
+    end
+else
+    grid = linspace(Threshold(1),Threshold(2),20);
+    for i = 1:length(grid)
+        idx = find(Losses < grid(i),1,'first');
+        if isempty(idx)
+            IDs(i) = CodeSize; % Saturazione
+        else
+            IDs(i) = idx;
+        end
+    end
+    
+    ID = mode(IDs); % Prende il valore più frequente
+end
+
+
+
+% change = ischange(flip(Losses),'linear','Threshold',0.5);
+% ID = CodeSize - find(change == 1,1,'first') + 1;
+% if isempty(ID)
+%     ID = 1;
+% end
+
+disp("---");
+
+end

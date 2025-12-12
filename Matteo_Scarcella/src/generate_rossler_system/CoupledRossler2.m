@@ -22,7 +22,8 @@ options = odeset('RelTol',1e-6,'AbsTol',1e-8);
 [t,sol] = ode45(@(t,x) system(t,x,C), tspan, [X0;Y0], options);
 
 % rimuovo i primi secondi di assestamento
-start = 15000;
+% start = 15000;
+start = 10000;
 
 X = sol(start:end,1:3);
 Y = sol(start:end,4:6);
@@ -32,9 +33,9 @@ function dx = system(t, x, C)
     dx = zeros(6,1);
     
     % Equazioni sistema di Rössler
-    dx(1) = -x(2) - x(3);
-    dx(2) = x(1) + 0.1*x(2);
-    dx(3) = 0.1 + x(3)*(x(1)-14);
+    dx(1) = 5*(-x(2) - x(3));
+    dx(2) = 5*(x(1) + 0.1*x(2));
+    dx(3) = 5*(0.1 + x(3)*(x(1)-14));
 
     dx(4) = -0.985*x(5) - x(6) + C*(x(1)-x(4));
     dx(5) = 0.985*x(4) + 0.15*x(5);

@@ -1,6 +1,9 @@
-function [X,Code,parameters] = VAE_Network(X,Predict,parameters,AE,codePrediction)
+function [X,Code,parameters] = IDEA_Network2(X,Predict,parameters,AE,proj,codePrediction)
 
 if nargin == 4
+    codePrediction = 0;
+    proj = 0;
+elseif nargin == 5
     codePrediction = 0;
 end
 
@@ -18,6 +21,7 @@ if Predict == 0
 
     parameters.scale.Xmean = dlarray(mean(X,2));
     parameters.scale.Xstd = dlarray(std(X,[],2));
+    parameters.scale.Xrange = dlarray(range(X(:)));
     
     X = (X - parameters.scale.Xmean)./parameters.scale.Xstd;
 
@@ -29,11 +33,15 @@ if Predict == 0
         X = fullyconnect(X,parameters.("en"+i).weights,parameters.("en"+i).bias);
     end
 
+    % Codice latente
     parameters.Code.weights = dlarray(randn([CodeSize size(X,1)]))/3;
     parameters.Code.bias = dlarray(zeros([CodeSize 1]));
 
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);
     X = Code;
+
+    % Cancel-Out
+    % parameters.CO.weights = dlarray(ones([CodeSize 1]));
 
     for i = 1 : length(Layer_Dec)
 
@@ -61,9 +69,13 @@ elseif Predict == 1
 
     end
 
+    % Codice latente
     Code = fullyconnect(X,parameters.Code.weights,parameters.Code.bias);    
     X = Code;
-    % X = normrnd(X,0.1);
+
+    % Cancel-Out
+    % X = X .* relu(parameters.CO.weights);
+    
 
     for i = 1 : length(Layer_Dec)
 

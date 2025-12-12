@@ -42,8 +42,18 @@ function [D2_mean, D2_std, Loss] = CorrelationDimension_MC(X,MC,type,perc)
             D2_values(mc) = CorrelationDimension_TorVergata(X(ind_rand,:));
         end
         
-    elseif type == "Autoencoder"
-        [D2_values,Loss] = AutoencoderCorrelationDimension(X,10,0.2);
+    elseif type == "IDEA-2"
+        % D2_values = IDEA2(X',[128 64 32 16],8,0.005,0);
+        D2_values = IDEA2(X',[128 64 32 16],8,[0.001,0.01]);
+
+
+    elseif type == "IDEA"
+        for mc = 1:5
+            D2_values(mc) = IDEA(X',[128 64 32 16],6);
+        end
+
+    elseif type == "TwoNN"
+        D2_values = TwoNN(X);
     end
     
 
